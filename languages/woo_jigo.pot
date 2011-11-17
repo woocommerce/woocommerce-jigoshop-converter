@@ -1,0 +1,81 @@
+# Copyright (C) 2011 WordPress Importer
+# This file is distributed under the same license as the WordPress Importer package.
+msgid ""
+msgstr ""
+"Project-Id-Version: WooCommerce - WP E-Commerce Converter\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2011-11-15 03:46+0700\n"
+"PO-Revision-Date: 2011-11-15 03:46+0700\n"
+"Last-Translator: WooThemes <agusmu7@gmail.com>\n"
+"Language-Team: WooThemes <agusmu7@gmail.com>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Poedit-KeywordsList: __;_e\n"
+"X-Poedit-Basepath: .\n"
+"X-Poedit-SearchPath-0: ..\n"
+
+#: ../woocommerce-jigo-converter.php:72
+msgid "JigoShop To WooCommerce Converter"
+msgstr ""
+
+#: ../woocommerce-jigo-converter.php:79
+#, php-format
+msgid "A new version of this importer is available. Please update to version %s to ensure compatibility with newer export files."
+msgstr ""
+
+#: ../woocommerce-jigo-converter.php:96
+msgid "Please deactivate your JigoShop plugin."
+msgstr ""
+
+#: ../woocommerce-jigo-converter.php:98
+msgid "Analyzing JigoShop products&hellip;"
+msgstr ""
+
+#: ../woocommerce-jigo-converter.php:113
+#, php-format
+msgid "<b>%d</b> products were identified"
+msgstr ""
+
+#: ../woocommerce-jigo-converter.php:116
+#, php-format
+msgid "<b>%d</b> product attribute taxonomies were identified"
+msgstr ""
+
+#: ../woocommerce-jigo-converter.php:129
+#, php-format
+msgid "<b>%d</b> product variations were identified"
+msgstr ""
+
+#: ../woocommerce-jigo-converter.php:138
+msgid "Convert Now"
+msgstr ""
+
+#: ../woocommerce-jigo-converter.php:142
+msgid "<b>Please backup your database first</b>. We are not responsible for any harm or wrong doing this plugin may cause. Users are fully responsible for their own use. This plugin is to be used WITHOUT warranty."
+msgstr ""
+
+#: ../woocommerce-jigo-converter.php:174
+#, php-format
+msgid "<b>%s</b> product attribute taxonomy was converted"
+msgstr ""
+
+#: ../woocommerce-jigo-converter.php:179
+#, php-format
+msgid "<b>%s</b> product attribute taxonomy does exist"
+msgstr ""
+
+#: ../woocommerce-jigo-converter.php:382
+#, php-format
+msgid "<b>%s</b> product was converted"
+msgstr ""
+
+#: ../woocommerce-jigo-converter.php:456
+#, php-format
+msgid "<b>%s</b> product variation was converted"
+msgstr ""
+
+#: ../woocommerce-jigo-converter.php:476
+msgid "Convert products, product categories, and more from JigoShop to WooCommerce."
+msgstr ""
+

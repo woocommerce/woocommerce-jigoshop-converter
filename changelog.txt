@@ -1,0 +1,4 @@
+*** WooCommerce - JigoShop Converter Changelog ***
+
+2011.11.13 - version 1.0
+ * First Release
