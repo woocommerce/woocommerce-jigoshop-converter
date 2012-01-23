@@ -1,14 +1,25 @@
 <?php
 /*
 Plugin Name: WooCommerce - JigoShop Converter
-Plugin URI: http://www.woothemes.com/
+Plugin URI: http://www.woothemes.com/woocommerce
 Description: Convert products, product categories, and more from JigoShop to WooCommerce.
 Author: Agus MU
 Author URI: http://agusmu.com/
-Version: 1.0
+Version: 1.1
 Text Domain: woo_jigo
 License: GPL version 2 or later - http://www.gnu.org/licenses/old-licenses/gpl-2.0.html
 */
+
+/**
+ * Plugin updates
+ * */
+if (is_admin()) {
+	if ( ! class_exists( 'WooThemes_Plugin_Updater' ) ) require_once( 'woo-updater/plugin-updater.class.php' );
+	
+	$woo_plugin_updater_jigoshop_converter = new WooThemes_Plugin_Updater( __FILE__ );
+	$woo_plugin_updater_jigoshop_converter->api_key = 'd788ba19ad428a8fdebff0676e15a8e6';
+	$woo_plugin_updater_jigoshop_converter->init();
+}
 
 /**
  * Check if WooCommerce is active
@@ -148,11 +159,26 @@ class Woo_Jigo_Converter extends WP_Importer {
 
 	// Convert
 	function convert() {
+		global $wpdb;
+		
 		wp_suspend_cache_invalidation( true );
+		
 		$this->process_attributes();
 		$this->process_products();
 		$this->process_variations();
+		
 		wp_suspend_cache_invalidation( false );
+
+		// Like the upgrade script in WC - Upgrade old meta keys for product data
+		$meta = array('sku', 'downloadable', 'virtual', 'price', 'visibility', 'stock', 'stock_status', 'backorders', 'manage_stock', 'sale_price', 'regular_price', 'weight', 'length', 'width', 'height', 'tax_status', 'tax_class', 'upsell_ids', 'crosssell_ids', 'sale_price_dates_from', 'sale_price_dates_to', 'min_variation_price', 'max_variation_price', 'featured', 'product_attributes', 'file_path', 'download_limit', 'product_url', 'min_variation_price', 'max_variation_price');
+		
+		$wpdb->query("
+			UPDATE $wpdb->postmeta 
+			LEFT JOIN $wpdb->posts ON ( $wpdb->postmeta.post_id = $wpdb->posts.ID )
+			SET meta_key = CONCAT('_', meta_key)
+			WHERE meta_key IN ('". implode("', '", $meta) ."')
+			AND $wpdb->posts.post_type IN ('product', 'product_variation')
+		");
 	}
 
 	// Convert attributes
@@ -217,7 +243,7 @@ class Woo_Jigo_Converter extends WP_Importer {
 				
 				$meta = get_post_custom($product->ID);
 				foreach ($meta as $key => $val) {
-					$meta[$key] = maybe_unserialize($val[0]);
+					$meta[$key] = maybe_unserialize(maybe_unserialize($val[0]));
 				}
 				$meta_data = $meta['product_data'];
 				$meta_attributes = $meta['product_attributes'];
@@ -226,13 +252,13 @@ class Woo_Jigo_Converter extends WP_Importer {
 				// sorry, JigoShop doesn't support it
 
 				// regular_price
-				if ( isset($meta_data['regular_price'][0]) ) {
-					update_post_meta( $id, 'regular_price', $meta_data['regular_price'][0] );	
+				if ( isset($meta_data['regular_price']) ) {
+					update_post_meta( $id, '_regular_price', $meta_data['regular_price'] );	
 				}
 				
 				// sale_price
-				if ( isset($meta_data['sale_price'][0]) ) {
-					update_post_meta( $id, 'sale_price', $meta_data['sale_price'][0] );	
+				if ( isset($meta_data['sale_price']) ) {
+					update_post_meta( $id, '_sale_price', $meta_data['sale_price'] );	
 				}
 				
 				// price (regular_price/sale_price)
@@ -251,29 +277,33 @@ class Woo_Jigo_Converter extends WP_Importer {
 				// no update
 				
 				// sku: 
-				if ( isset($meta['SKU'][0]) ) {
-					update_post_meta( $id, 'sku', $meta['SKU'][0] );	
-					delete_post_meta( $id, 'SKU' );	
+				if ( isset($meta['SKU']) ) {
+					delete_post_meta( $id, 'SKU' ); // Delete SKU first so new sku is not removed
+					update_post_meta( $id, '_sku', $meta['SKU'] );	
+				}
+				if ( isset($meta['_SKU']) ) {
+					delete_post_meta( $id, '_SKU' ); // Delete SKU first so new sku is not removed
+					update_post_meta( $id, '_sku', $meta['_SKU'] );	
 				}
 				
 				// stock_status
-				if ( isset($meta_data['stock_status'][0]) ) {
-					update_post_meta( $id, 'stock_status', $meta_data['stock_status'][0] );	
+				if ( isset($meta_data['stock_status']) ) {
+					update_post_meta( $id, '_stock_status', $meta_data['stock_status'] );	
 				}
 
 				// manage_stock
-				if ( isset($meta_data['manage_stock'][0]) ) {
-					update_post_meta( $id, 'manage_stock', $meta_data['manage_stock'][0] );	
+				if ( isset($meta_data['manage_stock']) ) {
+					update_post_meta( $id, '_manage_stock', $meta_data['manage_stock'] );	
 				}
 
 				// stock
-				if ( isset($meta_data['stock'][0]) ) {
-					update_post_meta( $id, 'stock', $meta_data['stock'][0] );	
+				if ( isset($meta_data['stock']) ) {
+					update_post_meta( $id, '_stock', $meta_data['stock'] );	
 				}
 
 				// backorders 
-				if ( isset($meta_data['backorders'][0]) ) {
-					update_post_meta( $id, 'backorders', $meta_data['backorders'][0] );	
+				if ( isset($meta_data['backorders']) ) {
+					update_post_meta( $id, '_backorders', $meta_data['backorders'] );	
 				}
 
 				$terms = wp_get_object_terms( $id, 'product_type' );
@@ -288,71 +318,61 @@ class Woo_Jigo_Converter extends WP_Importer {
 				// virtual (yes/no)
 				// downloadable (yes/no)
 				if ( $product_type == 'virtual' ) {
-					update_post_meta( $id, 'virtual', 'yes' );	
-					update_post_meta( $id, 'downloadable', 'no' );	
+					update_post_meta( $id, '_virtual', 'yes' );	
+					update_post_meta( $id, '_downloadable', 'no' );	
 					wp_set_object_terms( $id, 'simple', 'product_type' );
 				}
 				elseif ( $product_type == 'downloadable' ) {
-					update_post_meta( $id, 'virtual', 'no' );	
-					update_post_meta( $id, 'downloadable', 'yes' );	
+					update_post_meta( $id, '_virtual', 'no' );	
+					update_post_meta( $id, '_downloadable', 'yes' );	
 					wp_set_object_terms( $id, 'simple', 'product_type' );
 				}
 				else {
-					update_post_meta( $id, 'virtual', 'no' );	
-					update_post_meta( $id, 'downloadable', 'no' );	
+					update_post_meta( $id, '_virtual', 'no' );	
+					update_post_meta( $id, '_downloadable', 'no' );	
 				}
 				
 				// file_path (downloadable)
 				// no update
 
 				// weight
-				if ( isset($meta_data['weight'][0]) ) {
-					update_post_meta( $id, 'weight', $meta_data['weight'][0] );	
+				if ( isset($meta_data['weight']) ) {
+					update_post_meta( $id, '_weight', $meta_data['weight'] );	
 				}
 
 				// length
-				if ( isset($meta_data['length'][0]) ) {
-					update_post_meta( $id, 'length', $meta_data['length'][0] );	
+				if ( isset($meta_data['length']) ) {
+					update_post_meta( $id, '_length', $meta_data['length'] );	
 				}
 				
 				// width
-				if ( isset($meta_data['width'][0]) ) {
-					update_post_meta( $id, 'width', $meta_data['width'][0] );	
+				if ( isset($meta_data['width']) ) {
+					update_post_meta( $id, '_width', $meta_data['width'] );	
 				}
 
 				// height
-				if ( isset($meta_data['height'][0]) ) {
-					update_post_meta( $id, 'height', $meta_data['height'][0] );	
+				if ( isset($meta_data['height']) ) {
+					update_post_meta( $id, '_height', $meta_data['height'] );	
 				}
 
 				// tax_status
-				if ( isset($meta_data['tax_status'][0]) ) {
-					update_post_meta( $id, 'tax_status', $meta_data['tax_status'][0] );	
+				if ( isset($meta_data['tax_status']) ) {
+					update_post_meta( $id, '_tax_status', $meta_data['tax_status'] );	
 				}
 				
 				// tax_class
-				if ( isset($meta_data['tax_class'][0]) ) {
-					update_post_meta( $id, 'tax_class', $meta_data['tax_class'][0] );	
-				}
-
-				// tax_class
-				if ( isset($meta_data['tax_class'][0]) ) {
-					update_post_meta( $id, 'tax_class', $meta_data['tax_class'][0] );	
-				}
-
-				// tax_class
-				if ( isset($meta_data['tax_class'][0]) ) {
-					update_post_meta( $id, 'tax_class', $meta_data['tax_class'][0] );	
+				if ( isset($meta_data['tax_class']) ) {
+					update_post_meta( $id, '_tax_class', $meta_data['tax_class'] );	
 				}
 
 				// crosssell_ids
-				if ( isset($meta_data['crosssell_ids'][0]) ) {
-					update_post_meta( $id, 'crosssell_ids', $meta_data['crosssell_ids'][0] );	
+				if ( isset($meta_data['crosssell_ids']) ) {
+					update_post_meta( $id, '_crosssell_ids', $meta_data['crosssell_ids'] );	
 				}
 
 				// upsell_ids
-				if ( isset($meta_data['upsell_ids'][0]) ) {
-					update_post_meta( $id, 'upsell_ids', $meta_data['upsell_ids'][0] );	
+				if ( isset($meta_data['upsell_ids']) ) {
+					update_post_meta( $id, '_upsell_ids', $meta_data['upsell_ids'] );	
 				}
 
 				// per_product_shipping
@@ -374,15 +394,15 @@ class Woo_Jigo_Converter extends WP_Importer {
 					$values = array_filter( $values );
 					wp_set_object_terms( $id, $values, $key);
 				}
-				update_post_meta( $id, 'product_attributes', $new_attributes );	
-
+				update_post_meta( $id, '_product_attributes', $new_attributes );	
+				
 				// delete product_data to mark it converted
-				delete_post_meta( $id, 'product_data' );	
+				delete_post_meta( $id, 'product_data' );
+				delete_post_meta( $id, 'product_attributes' );
 				$this->results++;
 				printf( '<p>'.__('<b>%s</b> product was converted', 'woo_jigo').'</p>', $title );
-				
 			}
-			
+
 		}
 		
 	}
@@ -438,19 +458,19 @@ class Woo_Jigo_Converter extends WP_Importer {
 				// sku (no update)
 
 				// virtual
-				update_post_meta( $id, 'virtual', 'no' );
+				update_post_meta( $id, '_virtual', 'no' );
 
 				// downloadable
-				update_post_meta( $id, 'downloadable', 'no' );
+				update_post_meta( $id, '_downloadable', 'no' );
 
 				// download_limit
-				update_post_meta( $id, 'download_limit', '' );
+				update_post_meta( $id, '_download_limit', '' );
 
 				// file_path
-				update_post_meta( $id, 'file_path', '' );
+				update_post_meta( $id, '_file_path', '' );
 
 				// update 'SKU' to 'sku' to mark it converted
-				$wpdb->query( "UPDATE $wpdb->postmeta SET meta_key = 'sku' WHERE BINARY meta_key = 'SKU' AND post_id = '$id'" );
+				$wpdb->query( "UPDATE $wpdb->postmeta SET meta_key = '_sku' WHERE BINARY meta_key = 'SKU' AND post_id = '$id'" );
 				
 				$this->results++;
 				printf( '<p>'.__('<b>%s</b> product variation was converted', 'woo_jigo').'</p>', $title );

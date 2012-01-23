@@ -6,7 +6,7 @@ Contributors: Agus MU
 Tags: e-commerce, shop, cart, woocommerce, product converter
 Requires at least: 3.2
 Tested up to: 3.2.1
-Stable tag: 1.0
+Stable tag: 1.1
 
 == Description ==
 
@@ -20,9 +20,15 @@ This Plugin converts products, product attributes, product variations and more f
 
 == Usage ==
 
-1. Open Tools > Import > JigoShop To WooCommerce Converter
+1. Follow the installation steps above
 
-2. Click 'Convert Now' button
+2. De-activate Jigoshop
+
+3. Activate WooCommerce
+
+4. Open Tools > Import > JigoShop To WooCommerce Converter
+
+5. Click 'Convert Now' button
 
 That's it!
 
