@@ -166,18 +166,6 @@ class Woo_Jigo_Converter extends WP_Importer {
 		
 		echo '<div class="narrow">';
 		
-		$meta = get_post_custom(169);
-		foreach ($meta as $key => $val) {
-			$meta[$key] = maybe_unserialize(maybe_unserialize($val[0]));
-		}
-		print_r($meta);
-		echo '<br/><br/>';
-		$meta = get_post_custom(173);
-		foreach ($meta as $key => $val) {
-			$meta[$key] = maybe_unserialize(maybe_unserialize($val[0]));
-		}
-		print_r($meta);
-		
 		// show error message when JigoShop plugin is active
 		if ( class_exists( 'jigoshop' ) ) 
 			echo '<div class="error"><p>'.__('Please deactivate your JigoShop plugin.', 'woo_jigo').'</p></div>';
