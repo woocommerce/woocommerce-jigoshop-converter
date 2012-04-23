@@ -401,7 +401,8 @@
 				'blocking' => true,
 				'headers' => array(),
 				'body' => $params,
-				'cookies' => array()
+				'cookies' => array(),
+				'sslverify' => false
 			    )
 			);
 			

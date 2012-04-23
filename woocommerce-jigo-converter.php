@@ -5,26 +5,26 @@ Plugin URI: http://www.woothemes.com/woocommerce
 Description: Convert products, product categories, and more from JigoShop to WooCommerce.
 Author: Agus MU
 Author URI: http://agusmu.com/
-Version: 1.2
+Version: 1.3
 Text Domain: woo_jigo
 License: GPL version 2 or later - http://www.gnu.org/licenses/old-licenses/gpl-2.0.html
 */
 
 /**
+ * Required functions
+ **/
+if ( ! function_exists( 'is_woocommerce_active' ) ) require_once( 'woo-includes/woo-functions.php' );
+
+/**
  * Plugin updates
- * */
-if (is_admin()) {
-	if ( ! class_exists( 'WooThemes_Plugin_Updater' ) ) require_once( 'woo-updater/plugin-updater.class.php' );
-	
+ **/
+if ( is_admin() ) {
 	$woo_plugin_updater_jigoshop_converter = new WooThemes_Plugin_Updater( __FILE__ );
 	$woo_plugin_updater_jigoshop_converter->api_key = 'd788ba19ad428a8fdebff0676e15a8e6';
 	$woo_plugin_updater_jigoshop_converter->init();
 }
-
-/**
- * Check if WooCommerce is active
- **/
-if ( ! in_array( 'woocommerce/woocommerce.php', apply_filters( 'active_plugins', get_option( 'active_plugins' ) ) ) )
+		
+if ( ! is_woocommerce_active() )
 	return;
 	
 if ( ! defined( 'WP_LOAD_IMPORTERS' ) )
@@ -542,7 +542,7 @@ class Woo_Jigo_Converter extends WP_Importer {
 					if ( isset($attribute['visible']) || isset($attribute['variation']) ) {
 						$key = $woocommerce->attribute_taxonomy_name($key);
 						$new_attributes[$key]['name'] = $key;
-						$new_attributes[$key]['value'] = '';
+						$new_attributes[$key]['value'] = $attribute['value'];
 						$new_attributes[$key]['position'] = $attribute['position'];
 						if ( $jigoshop_version < 1202010 ) {
 							$new_attributes[$key]['is_visible'] = ( $attribute['visible'] == 'yes' ? 1 : 0  );
