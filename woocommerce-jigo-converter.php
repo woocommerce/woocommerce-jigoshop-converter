@@ -454,7 +454,7 @@ class Woo_Jigo_Converter extends WP_Importer {
 					wp_set_object_terms( $id, 'simple', 'product_type' );
 				}
 				elseif ( $product_type == 'downloadable' ) {
-					update_post_meta( $id, '_virtual', 'no' );	
+					update_post_meta( $id, '_virtual', 'yes' );	
 					update_post_meta( $id, '_downloadable', 'yes' );	
 					wp_set_object_terms( $id, 'simple', 'product_type' );
 				}
@@ -527,8 +527,15 @@ class Woo_Jigo_Converter extends WP_Importer {
 					
 				}
 				
-				// file_path (downloadable)
-				// no update
+				// file_path (downloadable) -  Add ABSPATH
+				if ( isset($meta_data['file_path']) && ! strstr( $meta_data['file_path'], ABSPATH ) ) {
+					$meta_data['file_path'] = ltrim($meta_data['file_path'], '/');
+					update_post_meta( $id, '_file_path', trailingslashit( ABSPATH ) . $meta_data['file_path'] );	
+				}
+				if ( isset($meta_data['_file_path'])  && ! strstr( $meta_data['_file_path'], ABSPATH ) ) {
+					$meta_data['_file_path'] = ltrim($meta_data['_file_path'], '/');
+					update_post_meta( $id, '_file_path', trailingslashit( ABSPATH ) . $meta_data['_file_path'] );	
+				}
 
 				// per_product_shipping
 				// sorry, JigoShop doesn't support it
