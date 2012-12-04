@@ -5,28 +5,25 @@ Plugin URI: http://www.woothemes.com/woocommerce
 Description: Convert products, product categories, and more from JigoShop to WooCommerce.
 Author: Agus MU
 Author URI: http://agusmu.com/
-Version: 1.3
+Version: 1.3.1
 Text Domain: woo_jigo
 License: GPL version 2 or later - http://www.gnu.org/licenses/old-licenses/gpl-2.0.html
 */
 
 /**
  * Required functions
- **/
-if ( ! function_exists( 'is_woocommerce_active' ) ) require_once( 'woo-includes/woo-functions.php' );
+ */
+if ( ! function_exists( 'woothemes_queue_update' ) )
+	require_once( 'woo-includes/woo-functions.php' );
 
 /**
  * Plugin updates
- **/
-if ( is_admin() ) {
-	$woo_plugin_updater_jigoshop_converter = new WooThemes_Plugin_Updater( __FILE__ );
-	$woo_plugin_updater_jigoshop_converter->api_key = 'd788ba19ad428a8fdebff0676e15a8e6';
-	$woo_plugin_updater_jigoshop_converter->init();
-}
-		
+ */
+woothemes_queue_update( plugin_basename( __FILE__ ), 'XXX', 'XXX' );
+
 if ( ! is_woocommerce_active() )
 	return;
-	
+
 if ( ! defined( 'WP_LOAD_IMPORTERS' ) )
 	return;
 
@@ -99,7 +96,7 @@ class Woo_Jigo_Converter extends WP_Importer {
 
 	// Jigoshop Version
 	function jigoshop_version() {
-	
+
 		// Get the db version
 		$jigoshop_db_version = get_site_option( 'jigoshop_db_version' );
 
@@ -161,24 +158,24 @@ class Woo_Jigo_Converter extends WP_Importer {
 	// Analyze
 	function analyze() {
 		global $wpdb;
-		
+
 		$jigoshop_version = $this->jigoshop_version();
-		
+
 		echo '<div class="narrow">';
-		
+
 		// show error message when JigoShop plugin is active
-		if ( class_exists( 'jigoshop' ) ) 
+		if ( class_exists( 'jigoshop' ) )
 			echo '<div class="error"><p>'.__('Please deactivate your JigoShop plugin.', 'woo_jigo').'</p></div>';
-			
+
 		echo '<p>'.__('Analyzing JigoShop products&hellip;', 'woo_jigo').'</p>';
-		
+
 		echo '<ol>';
 
 		if ( $jigoshop_version < 1202010 ) {
 			$q = "
 				SELECT p.ID
 				FROM $wpdb->posts AS p, $wpdb->postmeta AS pm
-				WHERE 
+				WHERE
 					p.post_type = 'product'
 					AND pm.meta_key = 'product_data'
 					AND pm.meta_value != ''
@@ -206,7 +203,7 @@ class Woo_Jigo_Converter extends WP_Importer {
 			$q = "
 				SELECT p.ID
 				FROM $wpdb->posts AS p, $wpdb->postmeta AS pm
-				WHERE 
+				WHERE
 					p.post_type = 'product_variation'
 					AND BINARY pm.meta_key = 'SKU'
 					AND pm.post_id = p.ID
@@ -225,11 +222,11 @@ class Woo_Jigo_Converter extends WP_Importer {
 			$variations = count($variation_ids);
 			printf( '<li>'.__('<b>%d</b> "possible" product variations were identified', 'woo_jigo').'</li>', $variations );
 		}
-		
+
 		echo '</ol>';
 
 		if ( $products || $attributes || $variations ) {
-		
+
 			if ( $jigoshop_version >= 1202010 ) {
 				echo '<p><em>'.__('Note: JigoShop v1.0 and greater has many similarities with WooCommerce v1.4 and greater. We need to check all products.', 'woo_jigo').'</em></p>';
 			}
@@ -242,29 +239,29 @@ class Woo_Jigo_Converter extends WP_Importer {
 			<?php
 
 			echo '<p>'.__('<b>Please backup your database first</b>. We are not responsible for any harm or wrong doing this plugin may cause. Users are fully responsible for their own use. This plugin is to be used WITHOUT warranty.', 'woo_jigo').'</p>';
-			
+
 		}
-		
+
 		echo '</div>';
 	}
 
 	// Convert
 	function convert() {
 		global $wpdb;
-		
+
 		wp_suspend_cache_invalidation( true );
-		
+
 		$this->process_attributes();
 		$this->process_products();
 		$this->process_variations();
-		
+
 		wp_suspend_cache_invalidation( false );
 
 		// Like the upgrade script in WC - Upgrade old meta keys for product data
 		$meta = array('sku', 'downloadable', 'virtual', 'price', 'visibility', 'stock', 'stock_status', 'backorders', 'manage_stock', 'sale_price', 'regular_price', 'weight', 'length', 'width', 'height', 'tax_status', 'tax_class', 'upsell_ids', 'crosssell_ids', 'sale_price_dates_from', 'sale_price_dates_to', 'min_variation_price', 'max_variation_price', 'featured', 'product_attributes', 'file_path', 'download_limit', 'product_url', 'min_variation_price', 'max_variation_price');
-		
+
 		$wpdb->query("
-			UPDATE $wpdb->postmeta 
+			UPDATE $wpdb->postmeta
 			LEFT JOIN $wpdb->posts ON ( $wpdb->postmeta.post_id = $wpdb->posts.ID )
 			SET meta_key = CONCAT('_', meta_key)
 			WHERE meta_key IN ('". implode("', '", $meta) ."')
@@ -276,36 +273,36 @@ class Woo_Jigo_Converter extends WP_Importer {
 	function process_attributes() {
 
 		global $wpdb, $woocommerce;
-		
-		$attributes = $wpdb->get_results("SELECT * FROM {$wpdb->prefix}jigoshop_attribute_taxonomies");		
+
+		$attributes = $wpdb->get_results("SELECT * FROM {$wpdb->prefix}jigoshop_attribute_taxonomies");
 		foreach ( $attributes as $attribute ) {
-		
+
 			$attribute_name = $attribute->attribute_name;
 			$attribute_type = $attribute->attribute_type == 'multiselect' ? 'select' : $attribute->attribute_type;
 			$attribute_label = ucwords($attribute_name);
-			
+
 			if ($attribute_name && strlen($attribute_name)<30 && $attribute_type && !taxonomy_exists( $woocommerce->attribute_taxonomy_name($attribute_name) )) {
-			
+
 				$wpdb->insert( $wpdb->prefix . "woocommerce_attribute_taxonomies", array( 'attribute_name' => $attribute_name, 'attribute_label' => $attribute_label, 'attribute_type' => $attribute_type ), array( '%s', '%s' ) );
-				
+
 				printf( '<p>'.__('<b>%s</b> product attribute taxonomy was converted', 'woo_jigo').'</p>', $attribute_name );
-				
+
 			}
 			else {
-			
+
 				printf( '<p>'.__('<b>%s</b> product attribute taxonomy does exist', 'woo_jigo').'</p>', $attribute_name );
-			
+
 			}
-			
+
 		}
-		
+
 	}
-	
+
 	// Convert products
 	function process_products() {
-		
+
 		$jigoshop_version = $this->jigoshop_version();
-		
+
 		$this->results = 0;
 
 		$timeout = 600;
@@ -318,7 +315,7 @@ class Woo_Jigo_Converter extends WP_Importer {
 			$q = "
 				SELECT p.ID,p.post_title
 				FROM $wpdb->posts AS p, $wpdb->postmeta AS pm
-				WHERE 
+				WHERE
 					p.post_type = 'product'
 					AND pm.meta_key = 'product_data'
 					AND pm.meta_value != ''
@@ -328,115 +325,115 @@ class Woo_Jigo_Converter extends WP_Importer {
 		else {
 			$q = "
 				SELECT ID,post_title
-				FROM $wpdb->posts 
+				FROM $wpdb->posts
 				WHERE post_type = 'product'
 				";
 		}
-		
+
 		$products = $wpdb->get_results($q);
 
 		$count = count($products);
 
 		if ( $count ) {
-			
+
 			foreach ( $products as $product ) {
-			
+
 				$id = $product->ID;
 				$title = $product->post_title;
-				
+
 				$meta = get_post_custom($product->ID);
 				foreach ($meta as $key => $val) {
 					$meta[$key] = maybe_unserialize(maybe_unserialize($val[0]));
 				}
 
 				if ( $jigoshop_version < 1202010 ) {
-				
+
 					$meta_data = $meta['product_data'];
-					
+
 					// regular_price
 					if ( isset($meta_data['regular_price']) ) {
-						update_post_meta( $id, '_regular_price', $meta_data['regular_price'] );	
+						update_post_meta( $id, '_regular_price', $meta_data['regular_price'] );
 					}
-					
+
 					// sale_price
 					if ( isset($meta_data['sale_price']) ) {
-						update_post_meta( $id, '_sale_price', $meta_data['sale_price'] );	
+						update_post_meta( $id, '_sale_price', $meta_data['sale_price'] );
 					}
-					
-					// sku: 
+
+					// sku:
 					if ( isset($meta['SKU']) ) {
 						delete_post_meta( $id, 'SKU' ); // Delete SKU first so new sku is not removed
-						update_post_meta( $id, '_sku', $meta['SKU'] );	
+						update_post_meta( $id, '_sku', $meta['SKU'] );
 					}
 					if ( isset($meta['_SKU']) ) {
 						delete_post_meta( $id, '_SKU' ); // Delete SKU first so new sku is not removed
-						update_post_meta( $id, '_sku', $meta['_SKU'] );	
+						update_post_meta( $id, '_sku', $meta['_SKU'] );
 					}
-					
+
 					// stock_status
 					if ( isset($meta_data['stock_status']) ) {
-						update_post_meta( $id, '_stock_status', $meta_data['stock_status'] );	
+						update_post_meta( $id, '_stock_status', $meta_data['stock_status'] );
 					}
 
 					// manage_stock
 					if ( isset($meta_data['manage_stock']) ) {
-						update_post_meta( $id, '_manage_stock', $meta_data['manage_stock'] );	
+						update_post_meta( $id, '_manage_stock', $meta_data['manage_stock'] );
 					}
 
 					// stock
 					if ( isset($meta_data['stock']) ) {
-						update_post_meta( $id, '_stock', $meta_data['stock'] );	
+						update_post_meta( $id, '_stock', $meta_data['stock'] );
 					}
 
-					// backorders 
+					// backorders
 					if ( isset($meta_data['backorders']) ) {
-						update_post_meta( $id, '_backorders', $meta_data['backorders'] );	
+						update_post_meta( $id, '_backorders', $meta_data['backorders'] );
 					}
 
 					// weight
 					if ( isset($meta_data['weight']) ) {
-						update_post_meta( $id, '_weight', $meta_data['weight'] );	
+						update_post_meta( $id, '_weight', $meta_data['weight'] );
 					}
 
 					// length
 					if ( isset($meta_data['length']) ) {
-						update_post_meta( $id, '_length', $meta_data['length'] );	
+						update_post_meta( $id, '_length', $meta_data['length'] );
 					}
-					
+
 					// width
 					if ( isset($meta_data['width']) ) {
-						update_post_meta( $id, '_width', $meta_data['width'] );	
+						update_post_meta( $id, '_width', $meta_data['width'] );
 					}
 
 					// height
 					if ( isset($meta_data['height']) ) {
-						update_post_meta( $id, '_height', $meta_data['height'] );	
+						update_post_meta( $id, '_height', $meta_data['height'] );
 					}
 
 					// tax_status
 					if ( isset($meta_data['tax_status']) ) {
-						update_post_meta( $id, '_tax_status', $meta_data['tax_status'] );	
+						update_post_meta( $id, '_tax_status', $meta_data['tax_status'] );
 					}
-					
+
 					// tax_class
 					if ( isset($meta_data['tax_class']) ) {
-						update_post_meta( $id, '_tax_class', $meta_data['tax_class'] );	
+						update_post_meta( $id, '_tax_class', $meta_data['tax_class'] );
 					}
 
 					// crosssell_ids
 					if ( isset($meta_data['crosssell_ids']) ) {
-						update_post_meta( $id, '_crosssell_ids', $meta_data['crosssell_ids'] );	
+						update_post_meta( $id, '_crosssell_ids', $meta_data['crosssell_ids'] );
 					}
 
 					// upsell_ids
 					if ( isset($meta_data['upsell_ids']) ) {
-						update_post_meta( $id, '_upsell_ids', $meta_data['upsell_ids'] );	
+						update_post_meta( $id, '_upsell_ids', $meta_data['upsell_ids'] );
 					}
 
 					delete_post_meta( $id, 'product_data' );
-					
+
 				}
-				
+
 				$terms = wp_get_object_terms( $id, 'product_type' );
 				if (!is_wp_error($terms) && $terms) {
 					$term = current($terms);
@@ -449,40 +446,40 @@ class Woo_Jigo_Converter extends WP_Importer {
 				// virtual (yes/no)
 				// downloadable (yes/no)
 				if ( $product_type == 'virtual' ) {
-					update_post_meta( $id, '_virtual', 'yes' );	
-					update_post_meta( $id, '_downloadable', 'no' );	
+					update_post_meta( $id, '_virtual', 'yes' );
+					update_post_meta( $id, '_downloadable', 'no' );
 					wp_set_object_terms( $id, 'simple', 'product_type' );
 				}
 				elseif ( $product_type == 'downloadable' ) {
-					update_post_meta( $id, '_virtual', 'yes' );	
-					update_post_meta( $id, '_downloadable', 'yes' );	
+					update_post_meta( $id, '_virtual', 'yes' );
+					update_post_meta( $id, '_downloadable', 'yes' );
 					wp_set_object_terms( $id, 'simple', 'product_type' );
 				}
 				else {
-					update_post_meta( $id, '_virtual', 'no' );	
-					update_post_meta( $id, '_downloadable', 'no' );	
+					update_post_meta( $id, '_virtual', 'no' );
+					update_post_meta( $id, '_downloadable', 'no' );
 				}
-				
+
 				// product_url (external)
 				if ( isset($meta['external_url']) ) {
 					delete_post_meta( $id, 'external_url' );
-					update_post_meta( $id, '_product_url', $meta['external_url'] );	
+					update_post_meta( $id, '_product_url', $meta['external_url'] );
 				}
 
 				// price (regular_price/sale_price)
 				// no update
-				
+
 				// sale_price_dates_from
 				// no update
-				
+
 				// sale_price_dates_to
 				// no update
-				
+
 				// visibility: visible
 				// no update
-				
+
 				if ( $jigoshop_version >= 1202010 ) {
-				
+
 					// featured: yes / no
 					if ( isset($meta['featured']) && $meta['featured'] != 'yes' && $meta['featured'] != 'no' ) {
 						delete_post_meta( $id, 'featured' );
@@ -498,7 +495,7 @@ class Woo_Jigo_Converter extends WP_Importer {
 						else
 							update_post_meta( $id, '_featured', 'no' );
 					}
-					
+
 					// manage_stock: yes / no
 					if ( isset($meta['manage_stock']) && $meta['manage_stock'] != 'yes' && $meta['manage_stock'] != 'no' ) {
 						delete_post_meta( $id, 'manage_stock' );
@@ -514,7 +511,7 @@ class Woo_Jigo_Converter extends WP_Importer {
 						else
 							update_post_meta( $id, '_manage_stock', 'no' );
 					}
-					
+
 					// stock_status: -1
 					if ( isset($meta['stock_status']) && $meta['stock_status'] == -1 ) {
 						delete_post_meta( $id, 'stock_status' );
@@ -524,22 +521,22 @@ class Woo_Jigo_Converter extends WP_Importer {
 					if ( isset($meta['_stock_status']) && $meta['_stock_status'] == -1 ) {
 						update_post_meta( $id, '_stock_status', 'instock' );
 					}
-					
+
 				}
-				
+
 				// file_path (downloadable) -  Add ABSPATH
 				if ( isset($meta_data['file_path']) && ! strstr( $meta_data['file_path'], ABSPATH ) ) {
 					$meta_data['file_path'] = ltrim($meta_data['file_path'], '/');
-					update_post_meta( $id, '_file_path', trailingslashit( ABSPATH ) . $meta_data['file_path'] );	
+					update_post_meta( $id, '_file_path', trailingslashit( ABSPATH ) . $meta_data['file_path'] );
 				}
 				if ( isset($meta_data['_file_path'])  && ! strstr( $meta_data['_file_path'], ABSPATH ) ) {
 					$meta_data['_file_path'] = ltrim($meta_data['_file_path'], '/');
-					update_post_meta( $id, '_file_path', trailingslashit( ABSPATH ) . $meta_data['_file_path'] );	
+					update_post_meta( $id, '_file_path', trailingslashit( ABSPATH ) . $meta_data['_file_path'] );
 				}
 
 				// per_product_shipping
 				// sorry, JigoShop doesn't support it
-				
+
 				// fix product attributes
 				$meta_attributes = $meta['product_attributes'];
 				if ( !$meta_attributes ) $meta_attributes = $meta['_product_attributes'];
@@ -568,10 +565,10 @@ class Woo_Jigo_Converter extends WP_Importer {
 					}
 				}
 				if ( !empty( $new_attributes ) ) {
-					update_post_meta( $id, '_product_attributes', $new_attributes );	
+					update_post_meta( $id, '_product_attributes', $new_attributes );
 					delete_post_meta( $id, 'product_attributes' );
 				}
-				
+
 				$this->results++;
 				if ( $jigoshop_version < 1202010 ) {
 					printf( '<p>'.__('<b>%s</b> product was converted', 'woo_jigo').'</p>', $title );
@@ -585,9 +582,9 @@ class Woo_Jigo_Converter extends WP_Importer {
 
 	// Convert product variations
 	function process_variations() {
-		
+
 		$jigoshop_version = $this->jigoshop_version();
-		
+
 		$this->results = 0;
 
 		$timeout = 600;
@@ -600,7 +597,7 @@ class Woo_Jigo_Converter extends WP_Importer {
 			$q = "
 				SELECT p.ID,p.post_title
 				FROM $wpdb->posts AS p, $wpdb->postmeta AS pm
-				WHERE 
+				WHERE
 					p.post_type = 'product_variation'
 					AND BINARY pm.meta_key = 'SKU'
 					AND pm.post_id = p.ID
@@ -609,7 +606,7 @@ class Woo_Jigo_Converter extends WP_Importer {
 		else {
 			$q = "
 				SELECT ID,post_title
-				FROM $wpdb->posts 
+				FROM $wpdb->posts
 				WHERE post_type = 'product_variation'
 				";
 		}
@@ -618,9 +615,9 @@ class Woo_Jigo_Converter extends WP_Importer {
 		$count = count($products);
 
 		if ( $count ) {
-			
+
 			foreach ( $products as $product ) {
-			
+
 				$id = $product->ID;
 				$title = $product->post_title;
 
@@ -628,9 +625,9 @@ class Woo_Jigo_Converter extends WP_Importer {
 				foreach ($meta as $key => $val) {
 					$meta[$key] = maybe_unserialize(maybe_unserialize($val[0]));
 				}
-				
+
 				if ( $jigoshop_version < 1202010 ) {
-				
+
 					// update attributes
 					foreach ($meta as $key => $val) {
 						if (preg_match('/^tax_/', $key)) {
@@ -638,15 +635,15 @@ class Woo_Jigo_Converter extends WP_Importer {
 							$wpdb->query( "UPDATE $wpdb->postmeta SET meta_key = '$newkey' WHERE meta_key = '$key' AND post_id = '$id'" );
 						}
 					}
-					
+
 					// price (no update)
-					
+
 					// sale_price (no update)
-					
+
 					// weight (no update)
-					
+
 					// stock (no update)
-					
+
 					// sku (no update)
 
 					// virtual
@@ -663,10 +660,10 @@ class Woo_Jigo_Converter extends WP_Importer {
 
 					// update 'SKU' to 'sku' to mark it converted
 					$wpdb->query( "UPDATE $wpdb->postmeta SET meta_key = '_sku' WHERE BINARY meta_key = 'SKU' AND post_id = '$id'" );
-					
+
 				}
 				else {
-				
+
 					// update attributes
 					$meta_variation = $meta['variation_data'];
 					foreach ((array)$meta_variation as $key => $val) {
@@ -676,7 +673,7 @@ class Woo_Jigo_Converter extends WP_Importer {
 						}
 					}
 					delete_post_meta( $id, 'variation_data' );
-					
+
 					// from regular_price to price
 					if ( isset($meta['regular_price']) ) {
 						delete_post_meta( $id, 'regular_price' );
@@ -687,9 +684,9 @@ class Woo_Jigo_Converter extends WP_Importer {
 						delete_post_meta( $id, '_regular_price' );
 						update_post_meta( $id, '_price', $meta['_regular_price'] );
 					}
-					
+
 				}
-				
+
 				$this->results++;
 				if ( $jigoshop_version < 1202010 ) {
 					printf( '<p>'.__('<b>%s</b> product variation was converted', 'woo_jigo').'</p>', $title );
@@ -697,11 +694,11 @@ class Woo_Jigo_Converter extends WP_Importer {
 				else {
 					printf( '<p>'.__('<b>%s</b> product variation was checked and converted', 'woo_jigo').'</p>', $title );
 				}
-				
+
 			}
-			
+
 		}
-		
+
 	}
 
 }
@@ -717,7 +714,7 @@ function woo_jigo_importer_init() {
 	 */
 	$GLOBALS['woo_jigo'] = new Woo_Jigo_Converter();
 	register_importer( 'woo_jigo', 'JigoShop To WooCommerce Converter', __('Convert products, product categories, and more from JigoShop to WooCommerce.', 'woo_jigo'), array( $GLOBALS['woo_jigo'], 'dispatch' ) );
-	
+
 }
 add_action( 'admin_init', 'woo_jigo_importer_init' );
 
