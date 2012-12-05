@@ -19,7 +19,7 @@ if ( ! function_exists( 'woothemes_queue_update' ) )
 /**
  * Plugin updates
  */
-woothemes_queue_update( plugin_basename( __FILE__ ), 'XXX', 'XXX' );
+woothemes_queue_update( plugin_basename( __FILE__ ), '48197cd1c39056019b53eef0ffdf3c05', '19001' );
 
 if ( ! is_woocommerce_active() )
 	return;
