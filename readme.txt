@@ -2,7 +2,7 @@
 
 === WooCommerce - JigoShop Converter ===
 
-Contributors: Agus MU
+Contributors: WooThemes, Agus MU
 Tags: e-commerce, shop, cart, woocommerce, product converter
 Requires at least: 3.2
 Tested up to: 3.3.1
