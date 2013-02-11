@@ -1,6 +1,6 @@
 <?php
 /*
-Plugin Name: WooCommerce - JigoShop Converter
+Plugin Name: WooCommerce - JigoShop -> WooCommerce Converter
 Plugin URI: http://www.woothemes.com/woocommerce
 Description: Convert products, product categories, and more from JigoShop to WooCommerce.
 Author: WooThemes
