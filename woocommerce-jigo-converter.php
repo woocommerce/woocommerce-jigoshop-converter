@@ -1,11 +1,11 @@
 <?php
 /*
-Plugin Name: WooCommerce - JigoShop Converter
+Plugin Name: WooCommerce - JigoShop -> WooCommerce Converter
 Plugin URI: http://www.woothemes.com/woocommerce
 Description: Convert products, product categories, and more from JigoShop to WooCommerce.
-Author: Agus MU
-Author URI: http://agusmu.com/
-Version: 1.3.1
+Author: WooThemes
+Author URI: http://woothemes.com/
+Version: 1.3.2
 Text Domain: woo_jigo
 License: GPL version 2 or later - http://www.gnu.org/licenses/old-licenses/gpl-2.0.html
 */
