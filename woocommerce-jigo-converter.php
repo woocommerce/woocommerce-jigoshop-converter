@@ -5,7 +5,7 @@ Plugin URI: http://www.woothemes.com/woocommerce
 Description: Convert products, product categories, and more from JigoShop to WooCommerce.
 Author: WooThemes
 Author URI: http://woothemes.com/
-Version: 1.3.3
+Version: 1.3.4
 Text Domain: woo_jigo
 License: GPL version 2 or later - http://www.gnu.org/licenses/old-licenses/gpl-2.0.html
 */
@@ -281,7 +281,7 @@ class Woo_Jigo_Converter extends WP_Importer {
 			$attribute_type = $attribute->attribute_type == 'multiselect' ? 'select' : $attribute->attribute_type;
 			$attribute_label = ucwords($attribute_name);
 
-			if ($attribute_name && strlen($attribute_name)<30 && $attribute_type && !taxonomy_exists( $woocommerce->attribute_taxonomy_name($attribute_name) )) {
+			if ($attribute_name && strlen($attribute_name)<30 && $attribute_type && !taxonomy_exists( wc_attribute_taxonomy_name($attribute_name) )) {
 
 				$wpdb->insert( $wpdb->prefix . "woocommerce_attribute_taxonomies", array( 'attribute_name' => $attribute_name, 'attribute_label' => $attribute_label, 'attribute_type' => $attribute_type ), array( '%s', '%s' ) );
 
@@ -552,7 +552,7 @@ class Woo_Jigo_Converter extends WP_Importer {
 				$new_attributes = array();
 				foreach ( (array)$meta_attributes as $key => $attribute ) {
 					if ( isset($attribute['visible']) || isset($attribute['variation']) ) {
-						$key = $woocommerce->attribute_taxonomy_name($key);
+						$key = wc_attribute_taxonomy_name($key);
 						$new_attributes[$key]['name'] = $key;
 						$new_attributes[$key]['value'] = $attribute['value'];
 						$new_attributes[$key]['position'] = $attribute['position'];
