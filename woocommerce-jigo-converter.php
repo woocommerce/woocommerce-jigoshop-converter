@@ -5,7 +5,7 @@ Plugin URI: http://www.woothemes.com/woocommerce
 Description: Convert products, product categories, and more from JigoShop to WooCommerce.
 Author: WooThemes
 Author URI: http://woothemes.com/
-Version: 1.3.4
+Version: 1.3.5
 Text Domain: woo_jigo
 License: GPL version 2 or later - http://www.gnu.org/licenses/old-licenses/gpl-2.0.html
 */
@@ -28,7 +28,8 @@ if ( ! defined( 'WP_LOAD_IMPORTERS' ) )
 	return;
 
 /** Display verbose errors */
-define( 'IMPORT_DEBUG', false );
+if ( ! defined( 'IMPORT_DEBUG' ) )
+	define( 'IMPORT_DEBUG', false );
 
 // Load Importer API
 require_once ABSPATH . 'wp-admin/includes/import.php';
@@ -271,7 +272,6 @@ class Woo_Jigo_Converter extends WP_Importer {
 
 	// Convert attributes
 	function process_attributes() {
-
 		global $wpdb, $woocommerce;
 
 		$attributes = $wpdb->get_results("SELECT * FROM {$wpdb->prefix}jigoshop_attribute_taxonomies");
@@ -280,8 +280,13 @@ class Woo_Jigo_Converter extends WP_Importer {
 			$attribute_name = $attribute->attribute_name;
 			$attribute_type = $attribute->attribute_type == 'multiselect' ? 'select' : $attribute->attribute_type;
 			$attribute_label = ucwords($attribute_name);
+			if ( function_exists( 'wc_attribute_taxonomy_name' ) ) {
+				$taxonomy_name = wc_attribute_taxonomy_name( $attribute_name );
+			} else {
+				$taxonomy_name = $woocommerce->attribute_taxonomy_name( $attribute_name );
+			}
 
-			if ($attribute_name && strlen($attribute_name)<30 && $attribute_type && !taxonomy_exists( wc_attribute_taxonomy_name($attribute_name) )) {
+			if ($attribute_name && strlen($attribute_name)<30 && $attribute_type && ! taxonomy_exists( $taxonomy_name ) ) {
 
 				$wpdb->insert( $wpdb->prefix . "woocommerce_attribute_taxonomies", array( 'attribute_name' => $attribute_name, 'attribute_label' => $attribute_label, 'attribute_type' => $attribute_type ), array( '%s', '%s' ) );
 
@@ -300,6 +305,7 @@ class Woo_Jigo_Converter extends WP_Importer {
 
 	// Convert products
 	function process_products() {
+		global $woocommerce;
 
 		$jigoshop_version = $this->jigoshop_version();
 
@@ -552,7 +558,11 @@ class Woo_Jigo_Converter extends WP_Importer {
 				$new_attributes = array();
 				foreach ( (array)$meta_attributes as $key => $attribute ) {
 					if ( isset($attribute['visible']) || isset($attribute['variation']) ) {
-						$key = wc_attribute_taxonomy_name($key);
+						if ( function_exists( 'wc_attribute_taxonomy_name' ) ) {
+							$key = wc_attribute_taxonomy_name( $key );
+						} else {
+							$key = $woocommerce->attribute_taxonomy_name( $key );
+						}
 						$new_attributes[$key]['name'] = $key;
 						$new_attributes[$key]['value'] = $attribute['value'];
 						$new_attributes[$key]['position'] = $attribute['position'];
