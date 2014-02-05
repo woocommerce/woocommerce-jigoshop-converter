@@ -1,5 +1,8 @@
 *** WooCommerce - JigoShop Converter Changelog ***
 
+2014.02.05 - version 1.3.6
+ * Set gallery meta data in WC 2.0.x
+
 2014.01.23 - version 1.3.5
  * wc_attribute_taxonomy_name fallback
  
