@@ -5,7 +5,7 @@ Plugin URI: http://www.woothemes.com/woocommerce
 Description: Convert products, product categories, and more from JigoShop to WooCommerce.
 Author: WooThemes
 Author URI: http://woothemes.com/
-Version: 1.3.6
+Version: 1.3.7
 Text Domain: woo_jigo
 License: GPL version 2 or later - http://www.gnu.org/licenses/old-licenses/gpl-2.0.html
 */
@@ -481,7 +481,12 @@ class Woo_Jigo_Converter extends WP_Importer {
 				}
 
 				// price (regular_price/sale_price)
-				// no update
+				$sale_price 	= get_post_meta( $id, '_sale_price', true );
+				$regular_price 	= get_post_meta( $id, '_regular_price', true );
+				if ( isset($sale_price) && $sale_price > 0 ) 
+					update_post_meta( $id, '_price', $sale_price );
+				else
+					update_post_meta( $id, '_price', $regular_price );
 
 				// sale_price_dates_from
 				// no update
