@@ -275,6 +275,7 @@ class Woo_Jigo_Converter extends WP_Importer {
 		global $wpdb, $woocommerce;
 
 		$attributes = $wpdb->get_results("SELECT * FROM {$wpdb->prefix}jigoshop_attribute_taxonomies");
+
 		foreach ( $attributes as $attribute ) {
 
 			$attribute_name = $attribute->attribute_name;
@@ -286,9 +287,10 @@ class Woo_Jigo_Converter extends WP_Importer {
 				$taxonomy_name = $woocommerce->attribute_taxonomy_name( $attribute_name );
 			}
 
-			if ($attribute_name && strlen($attribute_name)<30 && $attribute_type && ! taxonomy_exists( $taxonomy_name ) ) {
+//			if ($attribute_name && strlen($attribute_name)<30 && $attribute_type && ! taxonomy_exists( $taxonomy_name ) ) {
+			if ($attribute_name && strlen($attribute_name)<30 && $attribute_type ) {
 
-				$wpdb->insert( $wpdb->prefix . "woocommerce_attribute_taxonomies", array( 'attribute_name' => $attribute_name, 'attribute_label' => $attribute_label, 'attribute_type' => $attribute_type ), array( '%s', '%s' ) );
+				$wpdb->insert( $wpdb->prefix . "woocommerce_attribute_taxonomies", array( 'attribute_name' => $attribute_name, 'attribute_label' => $attribute_label, 'attribute_type' => $attribute_type ), array( '%s', '%s', '%s' ) );
 
 				printf( '<p>'.__('<b>%s</b> product attribute taxonomy was converted', 'woo_jigo').'</p>', $attribute_name );
 
@@ -348,6 +350,7 @@ class Woo_Jigo_Converter extends WP_Importer {
 				$title = $product->post_title;
 
 				$meta = get_post_custom($product->ID);
+
 				foreach ($meta as $key => $val) {
 					$meta[$key] = maybe_unserialize(maybe_unserialize($val[0]));
 				}
@@ -557,8 +560,7 @@ class Woo_Jigo_Converter extends WP_Importer {
 				// sorry, JigoShop doesn't support it
 
 				// fix product attributes
-				$meta_attributes = $meta['product_attributes'];
-				if ( !$meta_attributes ) $meta_attributes = $meta['_product_attributes'];
+				$meta_attributes = isset( $meta['product_attributes'] ) ? $meta['product_attributes'] : $meta['_product_attributes'];
 				global $woocommerce;
 				$new_attributes = array();
 				foreach ( (array)$meta_attributes as $key => $attribute ) {
@@ -581,9 +583,16 @@ class Woo_Jigo_Converter extends WP_Importer {
 							$new_attributes[$key]['is_variation'] = ( $attribute['variation'] == true ? 1 : 0 );
 							$new_attributes[$key]['is_taxonomy'] = ( $attribute['is_taxonomy'] == true ? 1 : 0 );
 						}
-						$values = explode(",", $attribute['value']);
+
+						// Format and fix the values
+						$values = $attribute['value'];
+						if ( is_string( $attribute['value'] ) ) {
+							$values = explode( ",", $attribute['value'] );
+						}
 						// Remove empty items in the array
 						$values = array_filter( $values );
+
+						// Set the terms
 						wp_set_object_terms( $id, $values, $key);
 					}
 				}
@@ -694,11 +703,13 @@ class Woo_Jigo_Converter extends WP_Importer {
 				else {
 
 					// update attributes
-					$meta_variation = $meta['variation_data'];
-					foreach ((array)$meta_variation as $key => $val) {
-						if (preg_match('/^tax_/', $key)) {
-							$newkey = str_replace("tax_", "attribute_pa_", $key);
-							update_post_meta( $id, $newkey, $val );
+					if ( isset( $meta['variation_data'] ) ) {
+						$meta_variation = $meta['variation_data'];
+						foreach ( (array) $meta_variation as $key => $val ) {
+							if ( preg_match( '/^tax_/', $key ) ) {
+								$newkey = str_replace( "tax_", "attribute_pa_", $key );
+								update_post_meta( $id, $newkey, $val );
+							}
 						}
 					}
 					delete_post_meta( $id, 'variation_data' );
