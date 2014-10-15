@@ -303,6 +303,9 @@ class Woo_Jigo_Converter extends WP_Importer {
 
 		}
 
+		// Delete our attribute taxonomy
+		delete_transient('wc_attribute_taxonomies');
+
 	}
 
 	// Convert products
