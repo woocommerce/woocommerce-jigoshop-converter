@@ -1,5 +1,8 @@
 *** WooCommerce - JigoShop Converter Changelog ***
 
+2014.11.13 - version 2.0
+ * Rewrite of extension.
+
 2014.09.14 - version 1.3.7
  * price fields
 
