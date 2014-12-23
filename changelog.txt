@@ -1,5 +1,8 @@
 *** WooCommerce - JigoShop Converter Changelog ***
 
+2014.12.23 - version 2.0.1
+ * Fixed a download file migration bug.
+
 2014.11.13 - version 2.0
  * Rewrite of extension.
 
