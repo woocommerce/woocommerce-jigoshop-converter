@@ -385,15 +385,32 @@ if ( class_exists( 'WP_Importer' ) ) {
 						update_post_meta( $id, '_stock_status', 'instock' );
 					}
 
-					// file_path (downloadable) -  Add ABSPATH
-					if ( isset( $meta_data['file_path'] ) && ! strstr( $meta_data['file_path'], ABSPATH ) ) {
-						$meta_data['file_path'] = ltrim( $meta_data['file_path'], '/' );
-						update_post_meta( $id, '_file_path', trailingslashit( ABSPATH ) . $meta_data['file_path'] );
+					// file_path (downloadable)
+					$file_path = null;
+
+					// Check for file_path
+					if ( isset( $meta['file_path'] ) && ! strstr( $meta['file_path'], ABSPATH ) ) {
+						$file_path = ltrim( $meta['file_path'], '/' );
+						delete_post_meta( $id, 'file_path' );
+
 					}
 
-					if ( isset( $meta_data['_file_path'] ) && ! strstr( $meta_data['_file_path'], ABSPATH ) ) {
-						$meta_data['_file_path'] = ltrim( $meta_data['_file_path'], '/' );
-						update_post_meta( $id, '_file_path', trailingslashit( ABSPATH ) . $meta_data['_file_path'] );
+					// Check for _file_path
+					if ( isset( $meta['_file_path'] ) && ! strstr( $meta['_file_path'], ABSPATH ) ) {
+						$file_path = ltrim( $meta['_file_path'], '/' );
+						delete_post_meta( $id, '_file_path' );
+					}
+
+					// Format and save
+					if ( null !== $file_path ) {
+						$files = array(
+							md5( $file_path ) => array(
+								'name' => 'Downloadable File',
+								'file' => $file_path
+							)
+						);
+
+						update_post_meta( $id, '_downloadable_files', $files );
 					}
 
 					// per_product_shipping
